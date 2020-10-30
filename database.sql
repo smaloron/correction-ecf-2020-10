@@ -98,7 +98,7 @@ CREATE OR REPLACE VIEW vue_animateurs AS
 SELECT * FROM vue_personnes WHERE id_statut = 2;
 
 CREATE OR REPLACE VIEW vue_enfants AS
-SELECT p.*, ta.libelle as tranche_age
+SELECT p.*, ta.libelle as tranche_age, ta.id as id_tranche_age
 FROM vue_personnes as p
 INNER JOIN tranche_age as ta ON p.age BETWEEN ta.age_min and ta.age_max
 WHERE id_statut = 1;

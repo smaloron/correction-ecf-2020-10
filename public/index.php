@@ -1,3 +1,18 @@
+<?php
+try {
+    // Connexion à la BD
+    $pdo = require "connexion.php";
+
+    // Récupération des infos du camp
+    $sql = "SELECT * FROM camps";
+    $query = $pdo->query($sql);
+    $campList = $query->fetchAll();
+
+} catch (PDOException $ex) {
+    echo $ex->getMessage();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,7 +30,24 @@
                 Nouveau membre (enfant ou animateur)
             </a>
         </li>
+        <li>
+            <a href="formulaire-camp.php">
+                Nouveau camp
+            </a>
+        </li>
     </ul>
+
+    <h2>Liste des camps</h2>
+    <ul>
+        <?php foreach($campList as $camp): ?>
+            <li>
+                <a href="/affectation-camp.php?id=<?= $camp["id"]?>">
+                    <?= $camp["nom"]?>
+                </a>
+            </li>
+        <?php endforeach ?>
+    </ul>
+
 </body>
 
 </html>
