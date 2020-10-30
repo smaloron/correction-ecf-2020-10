@@ -14,26 +14,33 @@ try {
     $camp = $statement->fetch();
 
     // Liste des enfants qui peuvent participer au camp
-    $sql = "SELECT * FROM vue_enfants WHERE id_tranche_age= ?";
+    $sql = "SELECT * FROM vue_enfants 
+            LEFT JOIN affectation_camps ON
+                id_camp = ? AND id_participant = vue_enfants.id 
+            WHERE id_tranche_age= ?";
     $statement = $pdo->prepare($sql);
-    $statement->execute([$camp["id_tranche_age"]]);
+    $statement->execute([$camp["id_tranche_age"], $idCamp]);
     $children = $statement->fetchAll();
-
 
     // Traitement des données
     $isPosted = count($_POST) > 0;
     if ($isPosted) {
-        // récupération de la saisie
-        $nom = filter_input(INPUT_POST, "nom", FILTER_SANITIZE_STRING);
-        $nbPlaces = filter_input(INPUT_POST, "nb_place", FILTER_SANITIZE_NUMBER_INT);
-        $dateDebut = filter_input(INPUT_POST, "date_debut", FILTER_SANITIZE_NUMBER_INT);
-        $dateFin = filter_input(INPUT_POST, "date_fin", FILTER_SANITIZE_NUMBER_INT);
-        $trancheAge = filter_input(INPUT_POST, "tranche_age", FILTER_SANITIZE_NUMBER_INT);
 
-        $sql = "INSERT INTO camps (nom, date_debut, date_fin, nb_place,id_tranche_age)
-                VALUES (?,?,?,?,?)";
+        $selectedChildren = filter_input(INPUT_POST, "children", FILTER_SANITIZE_NUMBER_INT, FILTER_REQUIRE_ARRAY);
+
+        // Suppression des affectations
+        $sql = "DELETE FROM affectation_camps WHERE id_camp= ?";
         $statement = $pdo->prepare($sql);
-        $statement->execute([$nom, $dateDebut, $dateFin, $nbPlaces, $trancheAge]);
+        $statement->execute([$idCamp]);
+
+
+        $sql = "INSERT INTO affectation_camps (id_camp, id_participant) 
+                VALUES (?,?)";
+        $statement = $pdo->prepare($sql);
+
+        for($i=0; $i < count($selectedChildren); $i++) {
+            $statement->execute([$idCamp, $selectedChildren[$i]]);
+        }
 
         header("location:/index.php");
     }
@@ -61,18 +68,25 @@ try {
             <h1>Affectation au camp <?= $camp["nom"] ?></h1>
 
             <div class="col-md-6">
-                <table>
-                    <?php foreach ($children as $child) : ?>
-                        <tr>
-                            <td>
-                                <input type="checkbox">
-                            </td>
-                            <td>
-                                <?= $child["prenom"] ?> <?= $child["nom"] ?>
-                            </td>
-                        </tr>
-                    <?php endforeach ?>
-                </table>
+                <form method="post">
+                    <table>
+                        <?php foreach ($children as $child) : ?>
+                            <tr>
+                                <td>
+                                    <input type="checkbox" value="<?= $child["id"] ?>" name="children[]" 
+                                    <?= $child["id_camp"]== null?"":"checked" ?> >
+                                </td>
+                                <td>
+                                    <?= $child["prenom"] ?> <?= $child["nom"] ?>
+                                </td>
+                            </tr>
+                        <?php endforeach ?>
+                    </table>
+
+                    <button type="submit" name="childerSubmit">
+                        Valider
+                    </button>
+                </form>
             </div>
 
         </div>
