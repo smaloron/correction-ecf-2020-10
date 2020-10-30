@@ -6,6 +6,10 @@ USE camps;
 
 SET foreign_key_checks = 0;
 
+/***************************
+* Création des tables
+****************************/
+
 CREATE TABLE personnes(
     id INT UNSIGNED AUTO_INCREMENT,
     nom VARCHAR(30) NOT NULL,
@@ -30,7 +34,10 @@ CREATE TABLE camps(
     date_debut DATE NOT NULL,
     date_fin DATE NOT NULL,
     nb_place TINYINT UNSIGNED NOT NULL,
-    PRIMARY KEY (id)
+    id_tranche_age TINYINT UNSIGNED NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT camp_to_tranche_age 
+        FOREIGN KEY (id_tranche_age) REFERENCES tranche_age(id)
 );
 
 CREATE TABLE affectation_camps(
@@ -54,6 +61,9 @@ CREATE TABLE tranche_age (
 
 SET foreign_key_checks = 1;
 
+/***************************
+* Insertion des données
+****************************/
 
 INSERT INTO statuts (libelle) VALUES ('enfant'), ('animateur');
 
@@ -69,7 +79,26 @@ INSERT INTO personnes (nom, prenom, id_statut, date_naissance) VALUES
 ,('Albert', 'Paul', 1, '2008-10-18'), ('Julle', 'Amandine', 1, '2006-06-12')
 ,('Rhino', 'Odile', 2, '1990-10-18'), ('Saltiel', 'Philippe', 2, '2000-06-12');
 
-INSERT INTO camps (nom, date_debut, date_fin, nb_place) VALUES
-('Camp dans les landes', '2021-05-12', '2020-05-20', 6),
-('Camp dans les calanques', '2021-05-13', '2020-05-24', 6),
-('Camp dans les landes', '2021-06-12', '2020-06-20', 6);
+INSERT INTO camps (nom, date_debut, date_fin, nb_place, id_tranche_age) VALUES
+('Camp dans les landes', '2021-05-12', '2020-05-20', 6, 1),
+('Camp dans les calanques', '2021-05-13', '2020-05-24', 6, 2),
+('Camp dans les landes', '2021-06-12', '2020-06-20', 6, 1);
+
+/***************************
+* Création des vues
+****************************/
+
+CREATE OR REPLACE VIEW vue_personnes AS
+SELECT a.*, s.libelle as statut, 
+truncate(datediff(CURDATE(), date_naissance) / 365.25, 0) as age
+FROM personnes as a
+INNER JOIN statuts as s ON s.id = a.id_statut ;
+
+CREATE OR REPLACE VIEW vue_animateurs AS
+SELECT * FROM vue_personnes WHERE id_statut = 2;
+
+CREATE OR REPLACE VIEW vue_enfants AS
+SELECT p.*, ta.libelle as tranche_age
+FROM vue_personnes as p
+INNER JOIN tranche_age as ta ON p.age BETWEEN ta.age_min and ta.age_max
+WHERE id_statut = 1;
